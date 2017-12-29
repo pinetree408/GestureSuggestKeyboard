@@ -22,9 +22,13 @@ public class MainActivity extends AppCompatActivity {
     private long touchDownTime;
 
     View container;
-    TextView resultView;
+    TextView resultPrevView;
+    TextView resultMainView;
+    TextView resultNextView;
     TextView inputView;
     KeyBoardView keyBoardView;
+
+    TextView clearView;
 
     String inputString;
 
@@ -54,9 +58,12 @@ public class MainActivity extends AppCompatActivity {
         getAncList(inputStream);
 
         container = findViewById(R.id.container);
-        resultView = (TextView) findViewById(R.id.result);
+        resultPrevView = (TextView) findViewById(R.id.result_pre);
+        resultMainView = (TextView) findViewById(R.id.result_main);
+        resultNextView = (TextView) findViewById(R.id.result_next);
         inputView = (TextView) findViewById(R.id.input);
         keyBoardView = (KeyBoardView) findViewById(R.id.tapboard);
+        clearView = (TextView) findViewById(R.id.clear);
 
         container.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -71,50 +78,44 @@ public class MainActivity extends AppCompatActivity {
                         touchDownTime = eventTime;
                         touchDownX = tempX;
                         touchDownY = tempY;
-                        resultView.setText("");
                         break;
                     case MotionEvent.ACTION_MOVE:
                         long touchTime = eventTime - touchDownTime;
                         if (touchTime > 200) {
                             state = "move";
-                            ArrayList<ArrayList<Anc>> tempList = new ArrayList<>();
-                            for (Anc anc : ancList) {
-                                if (anc.word.startsWith(inputString)) {
-                                    if (tempList.size() == 0) {
-                                        ArrayList<Anc> subTempList = new ArrayList<>();
-                                        subTempList.add(anc);
-                                        tempList.add(subTempList);
-                                    } else {
-                                        boolean addFlag = false;
-                                        for (ArrayList<Anc> subList : tempList) {
-                                            if (subList.get(0).word.length() == anc.word.length()) {
-                                                subList.add(anc);
-                                                addFlag = true;
-                                                break;
-                                            }
-                                        }
-                                        if (addFlag == false) {
-                                            ArrayList<Anc> subTempList = new ArrayList<>();
-                                            subTempList.add(anc);
-                                            tempList.add(subTempList);
-                                        }
-                                    }
-                                }
-                            }
+                            ArrayList<ArrayList<Anc>> tempList = getSuggest(inputString);
                             int unitX = ((int) (tempX - touchDownX)) / 50;
                             int unitY = ((int) (tempY - touchDownY)) / 50;
-                            String result = "";
+                            String resultPrev = "";
+                            String resultMain = "";
+                            String resultNext = "";
                             for (ArrayList<Anc> subList : tempList) {
-                                if (subList.get(0).word.length() == (inputString.length() + unitX)) {
+                                if (subList.get(0).word.length() == (inputString.length() + unitX -1)) {
                                     if (unitY >= subList.size()) {
                                         unitY = subList.size() - 1;
                                     } else if (unitY < 0) {
                                         unitY = 0;
                                     }
-                                    result = subList.get(unitY).word;
+                                    resultPrev = subList.get(unitY).word;
+                                } else if (subList.get(0).word.length() == (inputString.length() + unitX)) {
+                                    if (unitY >= subList.size()) {
+                                        unitY = subList.size() - 1;
+                                    } else if (unitY < 0) {
+                                        unitY = 0;
+                                    }
+                                    resultMain = subList.get(unitY).word;
+                                } else if (subList.get(0).word.length() == (inputString.length() + unitX + 1)) {
+                                    if (unitY >= subList.size()) {
+                                        unitY = subList.size() - 1;
+                                    } else if (unitY < 0) {
+                                        unitY = 0;
+                                    }
+                                    resultNext = subList.get(unitY).word;
                                 }
                             }
-                            resultView.setText(result);
+                            resultPrevView.setText(resultPrev);
+                            resultMainView.setText(resultMain);
+                            resultNextView.setText(resultNext);
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -131,16 +132,84 @@ public class MainActivity extends AppCompatActivity {
                                 inputString += params[0];
                             }
                             inputView.setText(inputString);
+                            ArrayList<ArrayList<Anc>> tempList = getSuggest(inputString);
+                            String resultPrev = "";
+                            String resultMain = "";
+                            String resultNext = "";
+                            for (ArrayList<Anc> subList : tempList) {
+                                if (subList.get(0).word.length() == (inputString.length() - 1)) {
+                                    resultPrev = subList.get(0).word;
+                                } else if (subList.get(0).word.length() == inputString.length()) {
+                                    resultMain = subList.get(0).word;
+                                } else if (subList.get(0).word.length() == (inputString.length() + 1)) {
+                                    resultNext = subList.get(0).word;
+                                }
+                            }
+                            resultPrevView.setText(resultPrev);
+                            resultMainView.setText(resultMain);
+                            resultNextView.setText(resultNext);
                         } else {
                             state = "tap";
-                            inputView.setText(resultView.getText());
-                            resultView.setText("");
+                            inputString = resultMainView.getText().toString();
+                            inputView.setText(inputString);
+                            resultPrevView.setText("");
+                            resultMainView.setText("");
+                            resultNextView.setText("");
                         }
                         break;
                 }
                 return true;
             }
         });
+
+        clearView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        inputString = "";
+                        inputView.setText(inputString);
+                        resultPrevView.setText("");
+                        resultMainView.setText("");
+                        resultNextView.setText("");
+                        break;
+                }
+                return true;
+            }
+        });
+    }
+
+    public ArrayList<ArrayList<Anc>> getSuggest(String inputString) {
+        ArrayList<ArrayList<Anc>> tempList = new ArrayList<>();
+        for (Anc anc : ancList) {
+            if (anc.word.startsWith(inputString)) {
+                if (tempList.size() == 0) {
+                    ArrayList<Anc> subTempList = new ArrayList<>();
+                    subTempList.add(anc);
+                    tempList.add(subTempList);
+                } else {
+                    boolean addFlag = false;
+                    for (ArrayList<Anc> subList : tempList) {
+                        if (subList.get(0).word.length() == anc.word.length()) {
+                            subList.add(anc);
+                            addFlag = true;
+                            break;
+                        }
+                    }
+                    if (!addFlag) {
+                        ArrayList<Anc> subTempList = new ArrayList<>();
+                        subTempList.add(anc);
+                        tempList.add(subTempList);
+                    }
+                }
+            }
+        }
+        return tempList;
     }
 
     public void getAncList(InputStream inputStream) {

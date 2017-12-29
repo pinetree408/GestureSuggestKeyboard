@@ -8,6 +8,7 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -98,7 +99,8 @@ public class KeyBoardView extends View {
         double keyWidth = viewWidth / 10;
         double keyHeight = keyWidth * 1.5;
 
-        keyboardPaint.setTextSize((float) (keyHeight * 0.8));
+        keyboardPaint.setTextSize((float) (keyWidth * 0.5));
+        keyboardPaint.setTypeface(Typeface.MONOSPACE);
         keyboardPaint.setColor(Color.parseColor("#80000000"));
 
         if (keyWidthRef == -1.0) {
