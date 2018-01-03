@@ -1,5 +1,8 @@
 package com.pinetree408.research.gesturesuggestkeyboard;
 
+import android.content.Context;
+import android.graphics.Color;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,14 +15,22 @@ import com.pinetree408.research.gesturesuggestkeyboard.util.KeyBoardView;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    private static final int TAP_DURATION = 200;
+
     private float touchDownX, touchDownY;
     private long touchDownTime;
+    private int posX, posY;
+    private int posDeltaX, posDeltaY;
 
     View container;
     TextView resultPrevView;
@@ -27,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     TextView resultNextView;
     TextView inputView;
     KeyBoardView keyBoardView;
+
+    TreeMap<Integer,ArrayList<Anc>> suggestMap;
 
     TextView clearView;
 
@@ -45,10 +58,14 @@ public class MainActivity extends AppCompatActivity {
 
     public List<Anc> ancList;
 
+    Vibrator vib;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         inputString = "";
         state = "tap";
@@ -63,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
         resultNextView = (TextView) findViewById(R.id.result_next);
         inputView = (TextView) findViewById(R.id.input);
         keyBoardView = (KeyBoardView) findViewById(R.id.tapboard);
+        keyBoardView.setBackgroundColor(Color.WHITE);
+
         clearView = (TextView) findViewById(R.id.clear);
 
         container.setOnTouchListener(new View.OnTouchListener() {
@@ -80,42 +99,52 @@ public class MainActivity extends AppCompatActivity {
                         touchDownY = tempY;
                         break;
                     case MotionEvent.ACTION_MOVE:
-                        long touchTime = eventTime - touchDownTime;
-                        if (touchTime > 200) {
+                        int tempUnitX = (int) (tempX - touchDownX) / (keyBoardView.getWidth() / 10);
+                        int tempUnitY = (int) (tempY - touchDownY) / (keyBoardView.getHeight() / 3);
+
+                        if ((tempUnitX != posX) || (tempUnitY != posY)) {
                             state = "move";
-                            ArrayList<ArrayList<Anc>> tempList = getSuggest(inputString);
-                            int unitX = ((int) (tempX - touchDownX)) / 50;
-                            int unitY = ((int) (tempY - touchDownY)) / 50;
-                            String resultPrev = "";
-                            String resultMain = "";
-                            String resultNext = "";
-                            for (ArrayList<Anc> subList : tempList) {
-                                if (subList.get(0).word.length() == (inputString.length() + unitX -1)) {
-                                    if (unitY >= subList.size()) {
-                                        unitY = subList.size() - 1;
-                                    } else if (unitY < 0) {
-                                        unitY = 0;
-                                    }
-                                    resultPrev = subList.get(unitY).word;
-                                } else if (subList.get(0).word.length() == (inputString.length() + unitX)) {
-                                    if (unitY >= subList.size()) {
-                                        unitY = subList.size() - 1;
-                                    } else if (unitY < 0) {
-                                        unitY = 0;
-                                    }
-                                    resultMain = subList.get(unitY).word;
-                                } else if (subList.get(0).word.length() == (inputString.length() + unitX + 1)) {
-                                    if (unitY >= subList.size()) {
-                                        unitY = subList.size() - 1;
-                                    } else if (unitY < 0) {
-                                        unitY = 0;
-                                    }
-                                    resultNext = subList.get(unitY).word;
-                                }
+                            vib.vibrate(100);
+                            posX = tempUnitX;
+                            posY = tempUnitY;
+                            suggestMap = getSuggest(inputString);
+
+                            if (posX > suggestMap.keySet().toArray().length - 1) {
+                                posX = suggestMap.keySet().toArray().length - 1;
+                            } else if (posX < 0) {
+                                posX = 0;
                             }
-                            resultPrevView.setText(resultPrev);
-                            resultMainView.setText(resultMain);
-                            resultNextView.setText(resultNext);
+                            if (posY < 0) {
+                                posY = 0;
+                            }
+                            resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+
+                            if (posX - 1 < 0) {
+                                resultPrevView.setText("");
+                            } else {
+                                if (posY > suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() - 1) {
+                                    posY = suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() - 1;
+                                }
+                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                            }
+
+                            if (posX + 1 > suggestMap.keySet().toArray().length - 1) {
+                                resultNextView.setText("");
+                            } else {
+                                if (posY > suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() - 1) {
+                                    posY = suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() - 1;
+                                }
+                                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                            }
+
+                        } else {
+                            if (state.equals("tap")) {
+
+                            } else if (state.equals("move")) {
+
+                            } else if (state.equals("move-tap")) {
+
+                            }
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -132,23 +161,28 @@ public class MainActivity extends AppCompatActivity {
                                 inputString += params[0];
                             }
                             inputView.setText(inputString);
-                            ArrayList<ArrayList<Anc>> tempList = getSuggest(inputString);
-                            String resultPrev = "";
-                            String resultMain = "";
-                            String resultNext = "";
-                            for (ArrayList<Anc> subList : tempList) {
-                                if (subList.get(0).word.length() == (inputString.length() - 1)) {
-                                    resultPrev = subList.get(0).word;
-                                } else if (subList.get(0).word.length() == inputString.length()) {
-                                    resultMain = subList.get(0).word;
-                                } else if (subList.get(0).word.length() == (inputString.length() + 1)) {
-                                    resultNext = subList.get(0).word;
-                                }
+
+                            suggestMap = getSuggest(inputString);
+                            if (suggestMap.keySet().toArray().length > 2) {
+                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
+                                resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[1]).get(0).word);
+                                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[2]).get(0).word);
+                            } else if (suggestMap.keySet().toArray().length > 1) {
+                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
+                                resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[1]).get(0).word);
+                                resultNextView.setText("");
+                            } else if (suggestMap.keySet().toArray().length > 0) {
+                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
+                                resultMainView.setText("");
+                                resultNextView.setText("");
+                            } else {
+                                resultPrevView.setText("");
+                                resultMainView.setText("");
+                                resultNextView.setText("");
                             }
-                            resultPrevView.setText(resultPrev);
-                            resultMainView.setText(resultMain);
-                            resultNextView.setText(resultNext);
-                        } else {
+                        } else if (state.equals("move")) {
+                            state = "move-tap";
+                        } else if (state.equals("move-tap")) {
                             state = "tap";
                             inputString = resultMainView.getText().toString();
                             inputView.setText(inputString);
@@ -177,6 +211,8 @@ public class MainActivity extends AppCompatActivity {
                         resultPrevView.setText("");
                         resultMainView.setText("");
                         resultNextView.setText("");
+                        state = "tap";
+                        keyBoardView.setBackgroundColor(Color.WHITE);
                         break;
                 }
                 return true;
@@ -184,32 +220,18 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public ArrayList<ArrayList<Anc>> getSuggest(String inputString) {
-        ArrayList<ArrayList<Anc>> tempList = new ArrayList<>();
+    public TreeMap<Integer,ArrayList<Anc>> getSuggest(String inputString) {
+        TreeMap<Integer,ArrayList<Anc>> tempMap = new TreeMap<>();
         for (Anc anc : ancList) {
             if (anc.word.startsWith(inputString)) {
-                if (tempList.size() == 0) {
-                    ArrayList<Anc> subTempList = new ArrayList<>();
-                    subTempList.add(anc);
-                    tempList.add(subTempList);
-                } else {
-                    boolean addFlag = false;
-                    for (ArrayList<Anc> subList : tempList) {
-                        if (subList.get(0).word.length() == anc.word.length()) {
-                            subList.add(anc);
-                            addFlag = true;
-                            break;
-                        }
-                    }
-                    if (!addFlag) {
-                        ArrayList<Anc> subTempList = new ArrayList<>();
-                        subTempList.add(anc);
-                        tempList.add(subTempList);
-                    }
+                if (tempMap.get(anc.word.length()) == null) {
+                    tempMap.put(anc.word.length(), new ArrayList<Anc>());
                 }
+                tempMap.get(anc.word.length()).add(anc);
             }
         }
-        return tempList;
+
+        return tempMap;
     }
 
     public void getAncList(InputStream inputStream) {
