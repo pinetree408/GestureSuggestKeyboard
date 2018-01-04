@@ -2,16 +2,22 @@ package com.pinetree408.research.gesturesuggestkeyboard;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
+import android.widget.TextSwitcher;
 import android.widget.TextView;
+import android.widget.ViewSwitcher;
 
 import com.pinetree408.research.gesturesuggestkeyboard.util.KeyBoardView;
 
@@ -27,8 +33,6 @@ import java.util.TreeMap;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
-
-    private static final int TAP_DURATION = 200;
 
     private float touchDownX, touchDownY;
     private long touchDownTime;
@@ -53,6 +57,11 @@ public class MainActivity extends AppCompatActivity {
 
     View suggetListLayout;
     List<TextView> suggestItemList;
+
+    Animation leftAnim;
+    Animation rightAnim;
+
+    String direct;
 
     class Anc {
         public String word;
@@ -101,6 +110,14 @@ public class MainActivity extends AppCompatActivity {
         int suggestListId = R.layout.suggest_list;
         suggetListLayout = vi1.inflate(suggestListId, null);
 
+        leftAnim = AnimationUtils.loadAnimation(this,
+                android.R.anim.slide_in_left);
+        rightAnim = AnimationUtils.loadAnimation(this,
+                android.R.anim.slide_out_right);
+
+        leftAnim.setDuration(150);
+        rightAnim.setDuration(150);
+
         container.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -122,8 +139,6 @@ public class MainActivity extends AppCompatActivity {
                         float thresholdX = (tempX - touchDownX) / (keyBoardView.getWidth() / 10);
                         float thresholdY = (tempY - touchDownY) / (keyBoardView.getHeight() / 3);
 
-                        Log.d(TAG, thresholdX + ":" + thresholdY + ":" + (eventTime - touchDownTime));
-
                         if (((thresholdX <= -0.5) || (thresholdX >= 0.5))
                                 || ((thresholdY <= -0.5) || (thresholdY >= 0.5)) && (eventTime - touchDownTime > 100)) {
 
@@ -140,19 +155,39 @@ public class MainActivity extends AppCompatActivity {
                                 state = "flicking";
                             }
 
+                            suggestMap = getSuggest(inputString);
+
+                            boolean isSuggested = false;
+                            if ((posX != tempUnitX) || (posY != tempUnitY)) {
+                                isSuggested = true;
+                            }
+
+                            Log.d(TAG, posX + ":" + posY);
+                            Log.d(TAG, tempUnitX + ":" + tempUnitY);
+
+                            int prevPosX = posX;
+                            int prevPosY = posY;
+
                             posX = tempUnitX;
                             posY = tempUnitY;
-
-                            suggestMap = getSuggest(inputString);
 
                             if (state.equals("flicking")) {
                                 posX = posX + savedPosX;
                                 posY = posY + savedPosY;
                             }
-                            if (suggetListLayout.getParent() != null) {
-                                removeSuggestionList();
+
+                            if ((posX != prevPosX) || (posY != prevPosY)) {
+                                if (suggetListLayout.getParent() != null) {
+                                    removeSuggestionList();
+                                }
+
+                                if (posX > prevPosX) {
+                                    direct = "right";
+                                } else if (posX < prevPosX) {
+                                    direct = "left";
+                                }
+                                setSuggestionList();
                             }
-                            setSuggestionList();
 
                         } else {
                             if (state.equals("tap")) {
@@ -170,7 +205,6 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case MotionEvent.ACTION_UP:
-                        Log.d(TAG, state);
                         if (state.equals("tap")) {
                             if (keyBoardView.getY() + keyBoardView.getHeight() < tempY) {
                                 if (inputString.length() != 0) {
@@ -328,10 +362,35 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    public void setTextSwitcher(TextSwitcher switcher) {
+        switcher.removeAllViews();
+        switcher.setFactory(new ViewSwitcher.ViewFactory() {
+            @Override
+            public View makeView() {
+                TextView t = new TextView(MainActivity.this);
+                t.setTextSize(20);
+                t.setTypeface(Typeface.MONOSPACE);
+                t.setHeight(resultPrevView.getHeight());
+                t.setWidth(resultPrevView.getWidth());
+                t.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL);
+                return t;
+            }
+        });
+        if (direct.equals("left")) {
+            switcher.setInAnimation(rightAnim);
+            switcher.setOutAnimation(leftAnim);
+        } else if (direct.equals("right")) {
+            switcher.setInAnimation(leftAnim);
+            switcher.setOutAnimation(rightAnim);
+        }
+    }
+
     public void setSuggestionList() {
+
         addContentView(suggetListLayout, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
         resultPrevView = (TextView) findViewById(R.id.suggest_list_item01);
-        TextView prevSecond = (TextView) findViewById(R.id.suggest_list_item02);
+        //TextView prevSecond = (TextView) findViewById(R.id.suggest_list_item02);
+        TextSwitcher prevSecond = (TextSwitcher) findViewById(R.id.suggest_list_item02);
         TextView prevThird = (TextView) findViewById(R.id.suggest_list_item03);
         TextView prevForth = (TextView) findViewById(R.id.suggest_list_item04);
 
@@ -344,6 +403,8 @@ public class MainActivity extends AppCompatActivity {
         TextView nextSecond = (TextView) findViewById(R.id.suggest_list_item22);
         TextView nextThird = (TextView) findViewById(R.id.suggest_list_item23);
         TextView nextForth = (TextView) findViewById(R.id.suggest_list_item24);
+
+        setTextSwitcher(prevSecond);
 
         if (suggestMap.keySet().toArray().length == 0) {
             resultMainView.setText("");
@@ -366,7 +427,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (posX < 0) {
             posX = 0;
         }
-        Log.d(TAG, posX + ":" + posY);
+
         if (posY > suggestMap.get(suggestMap.keySet().toArray()[posX]).size() - 1) {
             posY = suggestMap.get(suggestMap.keySet().toArray()[posX]).size() - 1;
         } else if (posY < 0) {

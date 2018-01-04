@@ -32,7 +32,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item02"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
