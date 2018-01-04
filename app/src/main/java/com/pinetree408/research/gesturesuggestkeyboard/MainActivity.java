@@ -6,8 +6,11 @@ import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.pinetree408.research.gesturesuggestkeyboard.util.KeyBoardView;
@@ -30,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private float touchDownX, touchDownY;
     private long touchDownTime;
     private int posX, posY;
+    private int savedPosX, savedPosY;
     private int posDeltaX, posDeltaY;
 
     View container;
@@ -46,6 +50,9 @@ public class MainActivity extends AppCompatActivity {
     String inputString;
 
     String state;
+
+    View suggetListLayout;
+    List<TextView> suggestItemList;
 
     class Anc {
         public String word;
@@ -69,6 +76,12 @@ public class MainActivity extends AppCompatActivity {
 
         inputString = "";
         state = "tap";
+        posX = 0;
+        posY = 0;
+        posDeltaX = 0;
+        posDeltaY = 0;
+        savedPosX = 0;
+        savedPosY = 0;
 
         ancList = new ArrayList<Anc>();
         final InputStream inputStream = getResources().openRawResource(R.raw.word_set);
@@ -83,6 +96,10 @@ public class MainActivity extends AppCompatActivity {
         keyBoardView.setBackgroundColor(Color.WHITE);
 
         clearView = (TextView) findViewById(R.id.clear);
+
+        LayoutInflater vi1 = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        int suggestListId = R.layout.suggest_list;
+        suggetListLayout = vi1.inflate(suggestListId, null);
 
         container.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -102,52 +119,58 @@ public class MainActivity extends AppCompatActivity {
                         int tempUnitX = (int) (tempX - touchDownX) / (keyBoardView.getWidth() / 10);
                         int tempUnitY = (int) (tempY - touchDownY) / (keyBoardView.getHeight() / 3);
 
-                        if ((tempUnitX != posX) || (tempUnitY != posY)) {
-                            state = "move";
-                            vib.vibrate(100);
+                        float thresholdX = (tempX - touchDownX) / (keyBoardView.getWidth() / 10);
+                        float thresholdY = (tempY - touchDownY) / (keyBoardView.getHeight() / 3);
+
+                        Log.d(TAG, thresholdX + ":" + thresholdY + ":" + (eventTime - touchDownTime));
+
+                        if (((thresholdX <= -0.5) || (thresholdX >= 0.5))
+                                || ((thresholdY <= -0.5) || (thresholdY >= 0.5)) && (eventTime - touchDownTime > 100)) {
+
+                            keyBoardView.setBackgroundColor(Color.parseColor("#d3d3d3"));
+                            if(state.equals("tap")) {
+                                state = "move";
+                            } else if (state.equals("move")){
+                            } else if (state.equals("move-up")) {
+                                state = "flicking";
+                            } else if (state.equals("flicking")) {
+                            } else if (state.equals("flicking-up")) {
+                                state = "flicking";
+                            } else if (state.equals("move-tap")) {
+                                state = "flicking";
+                            }
+
                             posX = tempUnitX;
                             posY = tempUnitY;
+
                             suggestMap = getSuggest(inputString);
 
-                            if (posX > suggestMap.keySet().toArray().length - 1) {
-                                posX = suggestMap.keySet().toArray().length - 1;
-                            } else if (posX < 0) {
-                                posX = 0;
+                            if (state.equals("flicking")) {
+                                posX = posX + savedPosX;
+                                posY = posY + savedPosY;
                             }
-                            if (posY < 0) {
-                                posY = 0;
+                            if (suggetListLayout.getParent() != null) {
+                                removeSuggestionList();
                             }
-                            resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
-
-                            if (posX - 1 < 0) {
-                                resultPrevView.setText("");
-                            } else {
-                                if (posY > suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() - 1) {
-                                    posY = suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() - 1;
-                                }
-                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
-                            }
-
-                            if (posX + 1 > suggestMap.keySet().toArray().length - 1) {
-                                resultNextView.setText("");
-                            } else {
-                                if (posY > suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() - 1) {
-                                    posY = suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() - 1;
-                                }
-                                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
-                            }
+                            setSuggestionList();
 
                         } else {
                             if (state.equals("tap")) {
 
                             } else if (state.equals("move")) {
 
+                            } else if (state.equals("move-up")) {
+                                state = "move-tap";
+                            } else if (state.equals("flicking")) {
+                            } else if (state.equals("flicking-up")) {
+                                state = "move-tap";
                             } else if (state.equals("move-tap")) {
 
                             }
                         }
                         break;
                     case MotionEvent.ACTION_UP:
+                        Log.d(TAG, state);
                         if (state.equals("tap")) {
                             if (keyBoardView.getY() + keyBoardView.getHeight() < tempY) {
                                 if (inputString.length() != 0) {
@@ -163,17 +186,13 @@ public class MainActivity extends AppCompatActivity {
                             inputView.setText(inputString);
 
                             suggestMap = getSuggest(inputString);
-                            if (suggestMap.keySet().toArray().length > 2) {
-                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
-                                resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[1]).get(0).word);
-                                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[2]).get(0).word);
-                            } else if (suggestMap.keySet().toArray().length > 1) {
-                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
-                                resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[1]).get(0).word);
-                                resultNextView.setText("");
+                            if (suggestMap.keySet().toArray().length > 1) {
+                                resultPrevView.setText("");
+                                resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
+                                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[1]).get(0).word);
                             } else if (suggestMap.keySet().toArray().length > 0) {
-                                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
-                                resultMainView.setText("");
+                                resultPrevView.setText("");
+                                resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[0]).get(0).word);
                                 resultNextView.setText("");
                             } else {
                                 resultPrevView.setText("");
@@ -181,14 +200,52 @@ public class MainActivity extends AppCompatActivity {
                                 resultNextView.setText("");
                             }
                         } else if (state.equals("move")) {
-                            state = "move-tap";
+                            state = "move-up";
+                            savedPosX = posX;
+                            savedPosY = posY;
+                        } else if (state.equals("move-up")){
+                            state = "tap";
+                            inputString = resultMainView.getText().toString();
+                            inputView.setText(inputString);
+                            removeSuggestionList();
+                            resultPrevView.setText("");
+                            resultMainView.setText("");
+                            resultNextView.setText("");
+                            keyBoardView.setBackgroundColor(Color.WHITE);
+                            posX = 0;
+                            posY = 0;
+                            savedPosX = 0;
+                            savedPosY = 0;
+                        } else if (state.equals("flicking")) {
+                            state = "flicking-up";
+                            savedPosX = posX;
+                            savedPosY = posY;
+                        } else if (state.equals("flicking-up")) {
+                            state = "tap";
+                            inputString = resultMainView.getText().toString();
+                            inputView.setText(inputString);
+                            removeSuggestionList();
+                            resultPrevView.setText("");
+                            resultMainView.setText("");
+                            resultNextView.setText("");
+                            keyBoardView.setBackgroundColor(Color.WHITE);
+                            posX = 0;
+                            posY = 0;
+                            savedPosX = 0;
+                            savedPosY = 0;
                         } else if (state.equals("move-tap")) {
                             state = "tap";
                             inputString = resultMainView.getText().toString();
                             inputView.setText(inputString);
+                            removeSuggestionList();
                             resultPrevView.setText("");
                             resultMainView.setText("");
                             resultNextView.setText("");
+                            keyBoardView.setBackgroundColor(Color.WHITE);
+                            posX = 0;
+                            posY = 0;
+                            savedPosX = 0;
+                            savedPosY = 0;
                         }
                         break;
                 }
@@ -208,11 +265,18 @@ public class MainActivity extends AppCompatActivity {
                     case MotionEvent.ACTION_UP:
                         inputString = "";
                         inputView.setText(inputString);
+                        if (suggetListLayout.getParent() != null) {
+                            removeSuggestionList();
+                        }
                         resultPrevView.setText("");
                         resultMainView.setText("");
                         resultNextView.setText("");
                         state = "tap";
                         keyBoardView.setBackgroundColor(Color.WHITE);
+                        posX = 0;
+                        posY = 0;
+                        savedPosX = 0;
+                        savedPosY = 0;
                         break;
                 }
                 return true;
@@ -262,5 +326,158 @@ public class MainActivity extends AppCompatActivity {
                 String.valueOf(tempX),
                 String.valueOf(tempY)
         };
+    }
+
+    public void setSuggestionList() {
+        addContentView(suggetListLayout, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+        resultPrevView = (TextView) findViewById(R.id.suggest_list_item01);
+        TextView prevSecond = (TextView) findViewById(R.id.suggest_list_item02);
+        TextView prevThird = (TextView) findViewById(R.id.suggest_list_item03);
+        TextView prevForth = (TextView) findViewById(R.id.suggest_list_item04);
+
+        resultMainView = (TextView) findViewById(R.id.suggest_list_item11);
+        TextView mainSecond = (TextView) findViewById(R.id.suggest_list_item12);
+        TextView mainThird = (TextView) findViewById(R.id.suggest_list_item13);
+        TextView mainForth = (TextView) findViewById(R.id.suggest_list_item14);
+
+        resultNextView = (TextView) findViewById(R.id.suggest_list_item21);
+        TextView nextSecond = (TextView) findViewById(R.id.suggest_list_item22);
+        TextView nextThird = (TextView) findViewById(R.id.suggest_list_item23);
+        TextView nextForth = (TextView) findViewById(R.id.suggest_list_item24);
+
+        if (suggestMap.keySet().toArray().length == 0) {
+            resultMainView.setText("");
+            mainSecond.setText("");
+            mainThird.setText("");
+            mainForth.setText("");
+            resultPrevView.setText("");
+            prevSecond.setText("");
+            prevThird.setText("");
+            prevForth.setText("");
+            resultNextView.setText("");
+            nextSecond.setText("");
+            nextThird.setText("");
+            nextForth.setText("");
+            return;
+        }
+
+        if (posX > suggestMap.keySet().toArray().length - 1) {
+            posX = suggestMap.keySet().toArray().length - 1;
+        } else if (posX < 0) {
+            posX = 0;
+        }
+        Log.d(TAG, posX + ":" + posY);
+        if (posY > suggestMap.get(suggestMap.keySet().toArray()[posX]).size() - 1) {
+            posY = suggestMap.get(suggestMap.keySet().toArray()[posX]).size() - 1;
+        } else if (posY < 0) {
+            posY = 0;
+        }
+        String preMainFirstText = resultMainView.getText().toString();
+
+        if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY + 3) {
+            resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 1).word);
+            mainThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 2).word);
+            mainForth.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 3).word);
+        } else if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY + 2) {
+            resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 1).word);
+            mainThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 2).word);
+            mainForth.setText("");
+        } else if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY + 1) {
+            resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 1).word);
+            mainThird.setText("");
+            mainForth.setText("");
+        } else if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY) {
+            resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainSecond.setText("");
+            mainThird.setText("");
+            mainForth.setText("");
+        } else {
+            resultMainView.setText("");
+            mainSecond.setText("");
+            mainThird.setText("");
+            mainForth.setText("");
+        }
+
+        if (!resultMainView.getText().toString().equals(preMainFirstText)) {
+            vib.vibrate(100);
+        }
+
+        if (posX - 1 < 0) {
+            resultPrevView.setText("");
+            prevSecond.setText("");
+            prevThird.setText("");
+            prevForth.setText("");
+        } else {
+            if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY + 3) {
+                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY + 1).word);
+                prevThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX- 1]).get(posY + 2).word);
+                prevForth.setText(suggestMap.get(suggestMap.keySet().toArray()[posX- 1]).get(posY + 3).word);
+            } else if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY + 2) {
+                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY + 1).word);
+                prevThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX- 1]).get(posY + 2).word);
+                prevForth.setText("");
+            } else if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY + 1) {
+                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY + 1).word);
+                prevThird.setText("");
+                prevForth.setText("");
+            } else if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY) {
+                resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevSecond.setText("");
+                prevThird.setText("");
+                prevForth.setText("");
+            } else {
+                resultPrevView.setText("");
+                prevSecond.setText("");
+                prevThird.setText("");
+                prevForth.setText("");
+            }
+        }
+
+        if (posX + 1 > suggestMap.keySet().toArray().length - 1) {
+            resultNextView.setText("");
+            nextSecond.setText("");
+            nextThird.setText("");
+            nextForth.setText("");
+        } else {
+            if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY + 3) {
+                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 1).word);
+                nextThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 2).word);
+                nextForth.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 3).word);
+            } else if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY + 2) {
+                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 1).word);
+                nextThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 2).word);
+                nextForth.setText("");
+            } else if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY + 1) {
+                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 1).word);
+                nextThird.setText("");
+                nextForth.setText("");
+            } else if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY) {
+                resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextSecond.setText("");
+                nextThird.setText("");
+                nextForth.setText("");
+            } else {
+                resultNextView.setText("");
+                nextSecond.setText("");
+                nextThird.setText("");
+                nextForth.setText("");
+            }
+        }
+    }
+
+    public void removeSuggestionList() {
+        ((ViewGroup) suggetListLayout.getParent()).removeView(suggetListLayout);
+        resultPrevView = (TextView) findViewById(R.id.result_pre);
+        resultMainView = (TextView) findViewById(R.id.result_main);
+        resultNextView = (TextView) findViewById(R.id.result_next);
     }
 }
