@@ -24,10 +24,7 @@ import com.pinetree408.research.gesturesuggestkeyboard.util.KeyBoardView;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -38,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
     private long touchDownTime;
     private int posX, posY;
     private int savedPosX, savedPosY;
-    private int posDeltaX, posDeltaY;
 
     View container;
     TextView resultPrevView;
@@ -56,10 +52,11 @@ public class MainActivity extends AppCompatActivity {
     String state;
 
     View suggetListLayout;
-    List<TextView> suggestItemList;
 
     Animation leftAnim;
     Animation rightAnim;
+    Animation upAnim;
+    Animation downAnim;
 
     String direct;
 
@@ -87,8 +84,6 @@ public class MainActivity extends AppCompatActivity {
         state = "tap";
         posX = 0;
         posY = 0;
-        posDeltaX = 0;
-        posDeltaY = 0;
         savedPosX = 0;
         savedPosY = 0;
 
@@ -115,8 +110,13 @@ public class MainActivity extends AppCompatActivity {
         rightAnim = AnimationUtils.loadAnimation(this,
                 android.R.anim.slide_out_right);
 
-        leftAnim.setDuration(150);
-        rightAnim.setDuration(150);
+        downAnim = AnimationUtils.loadAnimation(this, R.anim.slide_down);
+        upAnim = AnimationUtils.loadAnimation(this, R.anim.slide_up);
+
+        leftAnim.setDuration(250);
+        rightAnim.setDuration(250);
+        downAnim.setDuration(250);
+        upAnim.setDuration(250);
 
         container.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -185,6 +185,11 @@ public class MainActivity extends AppCompatActivity {
                                     direct = "right";
                                 } else if (posX < prevPosX) {
                                     direct = "left";
+                                }
+                                if (posY > prevPosY) {
+                                    direct = "up";
+                                } else if (posY < prevPosY) {
+                                    direct = "down";
                                 }
                                 setSuggestionList();
                             }
@@ -382,40 +387,59 @@ public class MainActivity extends AppCompatActivity {
         } else if (direct.equals("right")) {
             switcher.setInAnimation(leftAnim);
             switcher.setOutAnimation(rightAnim);
+        } else if (direct.equals("up")) {
+            switcher.setInAnimation(downAnim);
+            switcher.setOutAnimation(upAnim);
+        } else if (direct.equals("down")) {
+            switcher.setInAnimation(upAnim);
+            switcher.setOutAnimation(downAnim);
         }
     }
 
     public void setSuggestionList() {
 
         addContentView(suggetListLayout, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
-        resultPrevView = (TextView) findViewById(R.id.suggest_list_item01);
-        //TextView prevSecond = (TextView) findViewById(R.id.suggest_list_item02);
+        TextSwitcher prevFirstView = (TextSwitcher) findViewById(R.id.suggest_list_item01);
         TextSwitcher prevSecond = (TextSwitcher) findViewById(R.id.suggest_list_item02);
-        TextView prevThird = (TextView) findViewById(R.id.suggest_list_item03);
-        TextView prevForth = (TextView) findViewById(R.id.suggest_list_item04);
+        TextSwitcher prevThird = (TextSwitcher) findViewById(R.id.suggest_list_item03);
+        TextSwitcher prevForth = (TextSwitcher) findViewById(R.id.suggest_list_item04);
 
-        resultMainView = (TextView) findViewById(R.id.suggest_list_item11);
-        TextView mainSecond = (TextView) findViewById(R.id.suggest_list_item12);
-        TextView mainThird = (TextView) findViewById(R.id.suggest_list_item13);
-        TextView mainForth = (TextView) findViewById(R.id.suggest_list_item14);
+        TextSwitcher mainFirstView = (TextSwitcher) findViewById(R.id.suggest_list_item11);
+        TextSwitcher mainSecond = (TextSwitcher) findViewById(R.id.suggest_list_item12);
+        TextSwitcher mainThird = (TextSwitcher) findViewById(R.id.suggest_list_item13);
+        TextSwitcher mainForth = (TextSwitcher) findViewById(R.id.suggest_list_item14);
 
-        resultNextView = (TextView) findViewById(R.id.suggest_list_item21);
-        TextView nextSecond = (TextView) findViewById(R.id.suggest_list_item22);
-        TextView nextThird = (TextView) findViewById(R.id.suggest_list_item23);
-        TextView nextForth = (TextView) findViewById(R.id.suggest_list_item24);
+        TextSwitcher nextFirstView = (TextSwitcher) findViewById(R.id.suggest_list_item21);
+        TextSwitcher nextSecond = (TextSwitcher) findViewById(R.id.suggest_list_item22);
+        TextSwitcher nextThird = (TextSwitcher) findViewById(R.id.suggest_list_item23);
+        TextSwitcher nextForth = (TextSwitcher) findViewById(R.id.suggest_list_item24);
 
+        setTextSwitcher(prevFirstView);
         setTextSwitcher(prevSecond);
+        setTextSwitcher(prevThird);
+        setTextSwitcher(prevForth);
+        setTextSwitcher(mainFirstView);
+        setTextSwitcher(mainSecond);
+        setTextSwitcher(mainThird);
+        setTextSwitcher(mainForth);
+        setTextSwitcher(nextFirstView);
+        setTextSwitcher(nextSecond);
+        setTextSwitcher(nextThird);
+        setTextSwitcher(nextForth);
 
         if (suggestMap.keySet().toArray().length == 0) {
             resultMainView.setText("");
+            mainFirstView.setText("");
             mainSecond.setText("");
             mainThird.setText("");
             mainForth.setText("");
             resultPrevView.setText("");
+            prevFirstView.setText("");
             prevSecond.setText("");
             prevThird.setText("");
             prevForth.setText("");
             resultNextView.setText("");
+            nextFirstView.setText("");
             nextSecond.setText("");
             nextThird.setText("");
             nextForth.setText("");
@@ -437,26 +461,31 @@ public class MainActivity extends AppCompatActivity {
 
         if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY + 3) {
             resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
             mainSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 1).word);
             mainThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 2).word);
             mainForth.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 3).word);
         } else if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY + 2) {
             resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
             mainSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 1).word);
             mainThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 2).word);
             mainForth.setText("");
         } else if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY + 1) {
             resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
             mainSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY + 1).word);
             mainThird.setText("");
             mainForth.setText("");
         } else if (suggestMap.get(suggestMap.keySet().toArray()[posX]).size() > posY) {
             resultMainView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
+            mainFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX]).get(posY).word);
             mainSecond.setText("");
             mainThird.setText("");
             mainForth.setText("");
         } else {
             resultMainView.setText("");
+            mainFirstView.setText("");
             mainSecond.setText("");
             mainThird.setText("");
             mainForth.setText("");
@@ -468,32 +497,38 @@ public class MainActivity extends AppCompatActivity {
 
         if (posX - 1 < 0) {
             resultPrevView.setText("");
+            prevFirstView.setText("");
             prevSecond.setText("");
             prevThird.setText("");
             prevForth.setText("");
         } else {
             if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY + 3) {
                 resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
                 prevSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY + 1).word);
                 prevThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX- 1]).get(posY + 2).word);
                 prevForth.setText(suggestMap.get(suggestMap.keySet().toArray()[posX- 1]).get(posY + 3).word);
             } else if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY + 2) {
                 resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
                 prevSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY + 1).word);
                 prevThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX- 1]).get(posY + 2).word);
                 prevForth.setText("");
             } else if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY + 1) {
                 resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
                 prevSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY + 1).word);
                 prevThird.setText("");
                 prevForth.setText("");
             } else if (suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).size() > posY) {
                 resultPrevView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
+                prevFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX - 1]).get(posY).word);
                 prevSecond.setText("");
                 prevThird.setText("");
                 prevForth.setText("");
             } else {
                 resultPrevView.setText("");
+                prevFirstView.setText("");
                 prevSecond.setText("");
                 prevThird.setText("");
                 prevForth.setText("");
@@ -502,32 +537,38 @@ public class MainActivity extends AppCompatActivity {
 
         if (posX + 1 > suggestMap.keySet().toArray().length - 1) {
             resultNextView.setText("");
+            nextFirstView.setText("");
             nextSecond.setText("");
             nextThird.setText("");
             nextForth.setText("");
         } else {
             if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY + 3) {
                 resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
                 nextSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 1).word);
                 nextThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 2).word);
                 nextForth.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 3).word);
             } else if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY + 2) {
                 resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
                 nextSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 1).word);
                 nextThird.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 2).word);
                 nextForth.setText("");
             } else if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY + 1) {
                 resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
                 nextSecond.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY + 1).word);
                 nextThird.setText("");
                 nextForth.setText("");
             } else if (suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).size() > posY) {
                 resultNextView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
+                nextFirstView.setText(suggestMap.get(suggestMap.keySet().toArray()[posX + 1]).get(posY).word);
                 nextSecond.setText("");
                 nextThird.setText("");
                 nextForth.setText("");
             } else {
                 resultNextView.setText("");
+                nextFirstView.setText("");
                 nextSecond.setText("");
                 nextThird.setText("");
                 nextForth.setText("");
@@ -537,8 +578,5 @@ public class MainActivity extends AppCompatActivity {
 
     public void removeSuggestionList() {
         ((ViewGroup) suggetListLayout.getParent()).removeView(suggetListLayout);
-        resultPrevView = (TextView) findViewById(R.id.result_pre);
-        resultMainView = (TextView) findViewById(R.id.result_main);
-        resultNextView = (TextView) findViewById(R.id.result_next);
     }
 }

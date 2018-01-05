@@ -21,7 +21,7 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:weightSum="4">
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item01"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -43,7 +43,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item03"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -54,7 +54,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item04"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -72,7 +72,7 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:weightSum="4">
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item11"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -84,7 +84,7 @@
                 android:typeface="monospace"
                 android:background="#f08080"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item12"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -95,7 +95,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item13"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -106,7 +106,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item14"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -124,7 +124,7 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:weightSum="4">
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item21"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -135,7 +135,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item22"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -146,7 +146,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item23"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -157,7 +157,7 @@
                 android:textSize="20sp"
                 android:typeface="monospace"
                 />
-            <TextView
+            <TextSwitcher
                 android:id="@+id/suggest_list_item24"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
