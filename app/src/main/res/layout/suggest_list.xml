@@ -16,6 +16,7 @@
         android:background="#ffffff"
         >
         <LinearLayout
+            android:id="@+id/first_suggest_list_item"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -29,7 +30,7 @@
                 android:text="test1"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -40,7 +41,7 @@
                 android:text="test2"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -51,7 +52,7 @@
                 android:text="test3"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -62,11 +63,12 @@
                 android:text="test4"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
         </LinearLayout>
         <LinearLayout
+            android:id="@+id/second_suggest_list_item"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -80,7 +82,7 @@
                 android:text="test1"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 android:background="#f08080"
                 />
@@ -92,7 +94,7 @@
                 android:text="test2"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -103,7 +105,7 @@
                 android:text="test3"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -114,11 +116,12 @@
                 android:text="test4"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
         </LinearLayout>
         <LinearLayout
+            android:id="@+id/third_suggest_list_item"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -132,7 +135,7 @@
                 android:text="test1"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -143,7 +146,7 @@
                 android:text="test2"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -154,7 +157,7 @@
                 android:text="test3"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
             <TextSwitcher
@@ -165,7 +168,7 @@
                 android:text="test4"
                 android:textAlignment="center"
                 android:gravity="center"
-                android:textSize="20sp"
+                android:textSize="15sp"
                 android:typeface="monospace"
                 />
         </LinearLayout>

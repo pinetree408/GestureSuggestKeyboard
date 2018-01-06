@@ -122,7 +122,7 @@ public class KeyBoardView extends View {
                 if (i == 1) {
                     leftPadding += keyWidth * 0.5;
                 } else if (i == 2) {
-                    leftPadding += keyWidth * 1.0;
+                    leftPadding += keyWidth * 1.5;
                 }
 
                 if (keyboardCharPos.size() != 26) {
