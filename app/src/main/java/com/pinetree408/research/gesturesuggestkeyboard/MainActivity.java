@@ -130,10 +130,10 @@ public class MainActivity extends AppCompatActivity {
                         touchDownY = tempY;
                         break;
                     case MotionEvent.ACTION_MOVE:
-                        int tempUnitX = (int) (tempX - touchDownX) / (keyBoardView.getWidth() / 15);
+                        int tempUnitX = (int) (tempX - touchDownX) / (keyBoardView.getWidth() / 10);
                         int tempUnitY = (int) (tempY - touchDownY) / (keyBoardView.getHeight() / 5);
 
-                        float thresholdX = (tempX - touchDownX) / (keyBoardView.getWidth() / 15);
+                        float thresholdX = (tempX - touchDownX) / (keyBoardView.getWidth() / 10);
                         float thresholdY = (tempY - touchDownY) / (keyBoardView.getHeight() / 5);
 
                         if (((thresholdX <= -0.5) || (thresholdX >= 0.5))
@@ -205,14 +205,13 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case MotionEvent.ACTION_UP:
+                        String[] params = Util.getInputInfo(keyBoardView, event);
                         switch (state) {
                             case "tap":
-                                String[] params = Util.getInputInfo(keyBoardView, event);
                                 if (!params[0].equals(".")) {
                                     if (startTime == null) {
                                         startTime = System.currentTimeMillis();
                                     }
-
                                     inputWord += params[0];
                                     inputView.setText(inputString + inputWord);
                                     if (inputView.getText().toString().equals(targetView.getText().toString().toLowerCase())) {
@@ -239,7 +238,12 @@ public class MainActivity extends AppCompatActivity {
                                 savedPosY = posY;
                                 break;
                             case "move-up":
-                                resetSuggest(resultMainView.getText().toString());
+                                if (!params[0].equals(".")) {
+                                    resetSuggest(resultMainView.getText().toString());
+                                } else {
+                                    removeSuggestionList();
+                                    stateInitialize();
+                                }
                                 break;
                             case "flicking":
                                 state = "flicking-up";
@@ -247,10 +251,20 @@ public class MainActivity extends AppCompatActivity {
                                 savedPosY = posY;
                                 break;
                             case "flicking-up":
-                                resetSuggest(resultMainView.getText().toString());
+                                if (!params[0].equals(".")) {
+                                    resetSuggest(resultMainView.getText().toString());
+                                } else {
+                                    removeSuggestionList();
+                                    stateInitialize();
+                                }
                                 break;
                             case "move-tap":
-                                resetSuggest(resultMainView.getText().toString());
+                                if (!params[0].equals(".")) {
+                                    resetSuggest(resultMainView.getText().toString());
+                                } else {
+                                    removeSuggestionList();
+                                    stateInitialize();
+                                }
                                 break;
                         }
                         break;
@@ -526,9 +540,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        /*
         if (!resultMainView.getText().toString().equals(preMainFirstText)) {
             vib.vibrate(100);
         }
+        */
 
         if (posX - 1 < 0) {
             resultPrevView.setText("");
